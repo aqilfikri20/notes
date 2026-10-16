@@ -1,77 +1,90 @@
-let notes = [
-  {
-    id: 1,
-    title: "Babel",
-    body: "Babel merupakan tools open-source yang digunakan untuk mengubah sintaks ECMAScript 2015+ menjadi sintaks yang didukung oleh JavaScript engine versi lama. Babel sering dipakai ketika kita menggunakan sintaks terbaru termasuk sintaks JSX.",
-    createdAt: "2022-04-14T04:27:34.572Z",
-    archived: false,
-  },
-  {
-    id: 2,
-    title: "Functional Component",
-    body: "Functional component merupakan React component yang dibuat menggunakan fungsi JavaScript. Agar fungsi JavaScript dapat disebut component ia harus mengembalikan React element dan dipanggil layaknya React component.",
-    createdAt: "2022-04-14T04:27:34.572Z",
-    archived: false,
-  },
-  {
-    id: 3,
-    title: "Modularization",
-    body: "Dalam konteks pemrograman JavaScript, modularization merupakan teknik dalam memecah atau menggunakan kode dalam berkas JavaScript secara terpisah berdasarkan tanggung jawabnya masing-masing.",
-    createdAt: "2022-04-14T04:27:34.572Z",
-    archived: false,
-  },
-  {
-    id: 4,
-    title: "Lifecycle",
-    body: "Dalam konteks React component, lifecycle merupakan kumpulan method yang menjadi siklus hidup mulai dari component dibuat (constructor), dicetak (render), pasca-cetak (componentDidMount), dan sebagainya. ",
-    createdAt: "2022-04-14T04:27:34.572Z",
-    archived: false,
-  },
-  {
-    id: 5,
-    title: "ESM",
-    body: "ESM (ECMAScript Module) merupakan format modularisasi standar JavaScript.",
-    createdAt: "2022-04-14T04:27:34.572Z",
-    archived: false,
-  },
-  {
-    id: 6,
-    title: "Module Bundler",
-    body: "Dalam konteks pemrograman JavaScript, module bundler merupakan tools yang digunakan untuk menggabungkan seluruh modul JavaScript yang digunakan oleh aplikasi menjadi satu berkas.",
-    createdAt: "2022-04-14T04:27:34.572Z",
-    archived: false,
-  },
-];
+import { getSavedAccount } from './auth';
 
-const showFormattedDate = (date) => {
-  const options = {
-    weekday: "long",
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  };
-  return new Date(date).toLocaleDateString("id-ID", options);
-};
+const API_URL = '/api/notes';
+const GUEST_NOTES_KEY = 'notes-guest-cache-v1';
+
+async function request(url, options) {
+  const response = await fetch(url, {
+    credentials: 'same-origin',
+    headers: { 'Content-Type': 'application/json' },
+    ...options,
+  });
+
+  if (!response.ok) {
+    const result = await response.json().catch(() => ({}));
+    throw new Error(result.error || 'Gagal mengakses catatan.');
+  }
+
+  return response.status === 204 ? null : response.json();
+}
+
+function getGuestNotes() {
+  try {
+    const notes = JSON.parse(localStorage.getItem(GUEST_NOTES_KEY) || '[]');
+    return Array.isArray(notes) ? notes : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveGuestNotes(notes) {
+  localStorage.setItem(GUEST_NOTES_KEY, JSON.stringify(notes));
+}
+
+function isAccountSession() {
+  return Boolean(getSavedAccount());
+}
+
+const showFormattedDate = (date) => new Date(date).toLocaleDateString('id-ID', {
+  weekday: 'long',
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric',
+});
 
 function getData() {
-  return notes;
+  return isAccountSession()
+    ? request(API_URL)
+    : Promise.resolve(getGuestNotes().sort((left, right) => new Date(right.createdAt) - new Date(left.createdAt)));
 }
 
 function getNotes(id) {
-  return notes.find((notes) => notes.id === id) || null;
+  if (isAccountSession()) return request(`${API_URL}/${id}`);
+  return Promise.resolve(getGuestNotes().find((note) => note.id === Number(id)) || null);
 }
 
 function addNotes(newNote) {
-  notes.push({
-    id: +new Date(),
+  if (isAccountSession()) {
+    return request(API_URL, { method: 'POST', body: JSON.stringify(newNote) });
+  }
+
+  const note = {
+    id: Date.now() * 1000 + Math.floor(Math.random() * 1000),
     createdAt: new Date().toISOString(),
     archived: false,
     ...newNote,
-  });
+  };
+  saveGuestNotes([note, ...getGuestNotes()]);
+  return Promise.resolve(note);
+}
+
+function updateNote(id, updatedNote) {
+  if (isAccountSession()) {
+    return request(`${API_URL}/${id}`, { method: 'PUT', body: JSON.stringify(updatedNote) });
+  }
+
+  const notes = getGuestNotes();
+  const index = notes.findIndex((note) => note.id === Number(id));
+  if (index < 0) return Promise.reject(new Error('Catatan tidak ditemukan.'));
+  notes[index] = { ...notes[index], ...updatedNote };
+  saveGuestNotes(notes);
+  return Promise.resolve(notes[index]);
 }
 
 function noteDelete(id) {
-  notes = notes.filter((notes) => notes.id !== id);
+  if (isAccountSession()) return request(`${API_URL}/${id}`, { method: 'DELETE' });
+  saveGuestNotes(getGuestNotes().filter((note) => note.id !== Number(id)));
+  return Promise.resolve();
 }
 
-export { addNotes, getData, getNotes, showFormattedDate, noteDelete };
+export { addNotes, getData, getGuestNotes, getNotes, noteDelete, showFormattedDate, updateNote };

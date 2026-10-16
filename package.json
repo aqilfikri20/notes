@@ -5,7 +5,9 @@
   "homepage": "http://aqilfikri20.github.io/notes",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "concurrently -k -n api,vite \"node server/index.js\" \"vite\"",
+    "api": "node server/index.js",
+    "start": "node server/index.js",
     "build": "vite build",
     "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
@@ -13,7 +15,9 @@
     "deploy": "gh-pages -d dist"
   },
   "dependencies": {
+    "express": "^5.3.0",
     "html-react-parser": "^5.1.12",
+    "mysql2": "^3.24.6",
     "prop-types": "^15.8.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
@@ -24,6 +28,7 @@
     "@types/react": "^18.2.66",
     "@types/react-dom": "^18.2.22",
     "@vitejs/plugin-react": "^4.2.1",
+    "concurrently": "^10.0.6",
     "eslint": "^8.57.0",
     "eslint-plugin-react": "^7.34.1",
     "eslint-plugin-react-hooks": "^4.6.0",

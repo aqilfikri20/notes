@@ -1,4 +1,3 @@
-import React from 'react';
 
 import PropTypes from 'prop-types';
 import {Link} from "react-router-dom"
@@ -14,7 +13,7 @@ function HeaderNote({id,title, createdAt}){
     );
 }
 
-HeaderNote.proptypes = {
+HeaderNote.propTypes = {
     id: PropTypes.number.isRequired,
     title: PropTypes.string.isRequired,
     createdAt: PropTypes.string.isRequired,

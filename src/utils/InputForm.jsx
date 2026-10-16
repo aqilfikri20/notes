@@ -1,17 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import parser from 'html-react-parser';
-import { Navigate } from 'react-router-dom';
 
 import { MdOutlineCheckCircle } from "react-icons/md";
-
-function SomeComponent({ body}) {
-    return (
-      <div>
-        {parser(body)}
-      </div>
-    )
-  }
 
 class InputForm extends React.Component{
     constructor(props){
@@ -25,7 +15,6 @@ class InputForm extends React.Component{
         this.onTitleEvent = this.onTitleEvent.bind(this);
         this.onBodyEvent = this.onBodyEvent.bind(this);
         this.onSubmitEvent = this.onSubmitEvent.bind(this);
-        this.onInputHandler = this.onInputHandler.bind(this);
     }
 
     onTitleEvent(event){
@@ -37,26 +26,13 @@ class InputForm extends React.Component{
     }
 
     onBodyEvent(event){
-        this.setState(() => {
-            return {
-                body: event.target.value,
-            }
-        })
+        this.setState({ body: event.target.value });
     }
 
     onSubmitEvent(event){
         event.preventDefault();
         this.props.addNotes(this.state);
     }
-
-    onInputHandler(event) {
-        this.setState(() => {
-          return {
-            body: event.target.innerHTML,
-          }
-        });
-      }
-
 
     render(){
         return(
@@ -65,15 +41,17 @@ class InputForm extends React.Component{
           type='text'
           className='add-title'
           placeholder='Tulis Judul...'
+          required
           value={this.state.title}
           onChange={this.onTitleEvent}
         />
        
-       <div
+        <textarea
     className="add-body"
-    data-placeholder="Tulis isi catatan..."
-    contentEditable
-    onInput={this.onInputHandler}
+    placeholder="Tulis isi catatan..."
+    value={this.state.body}
+    onChange={this.onBodyEvent}
+    required
     />
       <button type='submit' className='done'><MdOutlineCheckCircle className='mdDone'/></button>
      </form>

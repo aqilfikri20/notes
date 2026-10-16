@@ -1,4 +1,3 @@
-import React from "react";
 import { addNotes } from './data.js';
 import { useNavigate } from "react-router-dom";
 import InputForm from "./InputForm";
@@ -6,9 +5,13 @@ import InputForm from "./InputForm";
 function AddPage(){
     const navigate = useNavigate();
 
-    function onAddNotes(notes){
-        addNotes(notes)
-        navigate('/')
+    async function onAddNotes(notes){
+        try {
+            await addNotes(notes);
+            navigate('/');
+        } catch (error) {
+            window.alert(error.message);
+        }
     }
 
     return(
